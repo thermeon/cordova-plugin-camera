@@ -83,7 +83,6 @@ function takePicture (success, error, opts) {
 }
 
 function capture (success, errorCallback, opts) {
-    var localMediaStream;
     var targetWidth = opts[3];
     var targetHeight = opts[4];
 
@@ -114,40 +113,20 @@ function capture (success, errorCallback, opts) {
         var imageData = canvas.toDataURL('image/png');
 
         // stop video stream, remove video and button.
-        // Note that MediaStream.stop() is deprecated as of Chrome 47.
-        if (localMediaStream.stop) {
-            localMediaStream.stop();
-        } else {
-            localMediaStream.getTracks().forEach(function (track) {
-                track.stop();
-            });
-        }
+        video.srcObject.getTracks().forEach(function (track) {
+            track.stop();
+        });
+
         parent.parentNode.removeChild(parent);
 
         return success(imageData);
     };
 
-    navigator.getUserMedia = navigator.getUserMedia ||
-                             navigator.webkitGetUserMedia ||
-                             navigator.mozGetUserMedia ||
-                             navigator.msGetUserMedia;
-
-    var successCallback = function (stream) {
-        localMediaStream = stream;
-        if ('srcObject' in video) {
-            video.srcObject = localMediaStream;
-        } else {
-            video.src = window.URL.createObjectURL(localMediaStream);
-        }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+        video.srcObject = stream;
         video.play();
         document.body.appendChild(parent);
-    };
-
-    if (navigator.getUserMedia) {
-        navigator.getUserMedia({video: true, audio: false}, successCallback, errorCallback);
-    } else {
-        alert('Browser does not support camera :(');
-    }
+    });
 }
 
 module.exports = {
